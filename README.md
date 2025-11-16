@@ -1,5 +1,4 @@
 # aurx
-AUR package manager in Polish! 
 
-## PL
+### PL
 # a
