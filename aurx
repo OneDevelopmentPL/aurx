@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import shutil
+
+AURX_REPO = "https://github.com/OneDevelopmentPL/aurx.git"
+
+def run(cmd):
+    result = subprocess.run(cmd, shell=True)
+    if result.returncode != 0:
+        print(f"[!] Błąd przy wykonywaniu: {cmd}")
+        sys.exit(1)
+
+def install(pkgs):
+    for pkg in pkgs:
+        print(f"[*] Instalacja {pkg} z AUR...")
+        if os.path.exists(pkg):
+            shutil.rmtree(pkg)
+        run(f"git clone https://aur.archlinux.org/{pkg}.git")
+        os.chdir(pkg)
+        run("makepkg -si")
+        os.chdir("..")
+        shutil.rmtree(pkg)
+        print(f"[✓] Pakiet {pkg} zainstalowany!")
+
+def remove(pkgs):
+    for pkg in pkgs:
+        print(f"[*] Usuwanie {pkg}...")
+        run(f"sudo pacman -Rns {pkg}")
+        print(f"[✓] Pakiet {pkg} usunięty!")
+
+def update(pkgs):
+    for pkg in pkgs:
+        if pkg == "me":
+            print("[*] Aktualizacja samego aurx...")
+            if os.path.exists("aurx"):
+                shutil.rmtree("aurx")
+            run(f"git clone {AURX_REPO} aurx")
+            print("[✓] aurx zaktualizowany!")
+        elif pkg == "all":
+            print("[*] Aktualizacja wszystkich pakietów AUR...")
+            print("[!] Funkcja 'update all' wymaga listy zainstalowanych AUR")
+        else:
+            print(f"[*] Aktualizacja {pkg}...")
+            if os.path.exists(pkg):
+                shutil.rmtree(pkg)
+            run(f"git clone https://aur.archlinux.org/{pkg}.git")
+            os.chdir(pkg)
+            run("makepkg -si")
+            os.chdir("..")
+            shutil.rmtree(pkg)
+            print(f"[✓] Pakiet {pkg} zaktualizowany!")
+
+def interactive_menu():
+    while True:
+        print("\n=== aurx - Menedżer AUR ===")
+        print("1. Instaluj pakiet")
+        print("2. Aktualizuj pakiet")
+        print("3. Usuń pakiet")
+        print("4. Aktualizuj aurx")
+        print("5. Wyjście")
+        choice = input("Wybierz opcję: ")
+        if choice == "1":
+            pkgs = input("Podaj nazwę pakietu/pakietów (oddzielone spacją): ").split()
+            install(pkgs)
+        elif choice == "2":
+            pkgs = input("Podaj nazwę pakietu/pakietów (lub 'all'/'me'): ").split()
+            update(pkgs)
+        elif choice == "3":
+            pkgs = input("Podaj nazwę pakietu/pakietów: ").split()
+            remove(pkgs)
+        elif choice == "4":
+            update(["me"])
+        elif choice == "5":
+            break
+        else:
+            print("Niepoprawny wybór!")
+            
+def about():
+	print("Menadżer pakietów AUR zrobiony przez zespół OneDevelopment! AUR package manager created by OneDevelopment team! https://github.com/OneDevelopmentPL")
+
+def main():
+    if len(sys.argv) < 2:
+        interactive_menu()
+        return
+
+    cmd = sys.argv[1]
+
+    if cmd == "x":
+        interactive_menu()
+    elif cmd == "inst" and len(sys.argv) >= 3:
+        install(sys.argv[2:])
+    elif cmd == "rem" and len(sys.argv) >= 3:
+        remove(sys.argv[2:])
+    elif cmd == "update" and len(sys.argv) >= 3:
+        update(sys.argv[2:])
+    elif cmd == "about":
+    	about()
+    else:
+        print("Niepoprawna komenda. Dostępne: inst, rem, update, x, about")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
