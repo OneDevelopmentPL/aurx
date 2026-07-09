@@ -9,12 +9,12 @@ AURX_REPO = "https://github.com/OneDevelopmentPL/aurx.git"
 def run(cmd):
     result = subprocess.run(cmd, shell=True)
     if result.returncode != 0:
-        print(f"[!] Błąd przy wykonywaniu: {cmd}")
+        print(f"[!] Error executing command: {cmd}")
         sys.exit(1)
 
 def install(pkgs):
     for pkg in pkgs:
-        print(f"[*] Instalacja {pkg} z AUR...")
+        print(f"[*] Installing {pkg} from AUR...")
         if os.path.exists(pkg):
             shutil.rmtree(pkg)
         run(f"git clone https://aur.archlinux.org/{pkg}.git")
@@ -22,27 +22,27 @@ def install(pkgs):
         run("makepkg -si")
         os.chdir("..")
         shutil.rmtree(pkg)
-        print(f"[✓] Pakiet {pkg} zainstalowany!")
+        print(f"[✓] Package {pkg} installed successfully!")
 
 def remove(pkgs):
     for pkg in pkgs:
-        print(f"[*] Usuwanie {pkg}...")
+        print(f"[*] Removing {pkg}...")
         run(f"sudo pacman -Rns {pkg}")
-        print(f"[✓] Pakiet {pkg} usunięty!")
+        print(f"[✓] Package {pkg} removed successfully!")
 
 def update(pkgs):
     for pkg in pkgs:
         if pkg == "me":
-            print("[*] Aktualizacja samego aurx...")
+            print("[*] Updating aurx itself...")
             if os.path.exists("aurx"):
                 shutil.rmtree("aurx")
             run(f"git clone {AURX_REPO} aurx")
-            print("[✓] aurx zaktualizowany!")
+            print("[✓] aurx updated successfully!")
         elif pkg == "all":
-            print("[*] Aktualizacja wszystkich pakietów AUR...")
-            print("[!] Funkcja 'update all' wymaga listy zainstalowanych AUR")
+            print("[*] Updating all AUR packages...")
+            print("[!] The 'update all' feature requires a list of installed AUR packages.")
         else:
-            print(f"[*] Aktualizacja {pkg}...")
+            print(f"[*] Updating {pkg}...")
             if os.path.exists(pkg):
                 shutil.rmtree(pkg)
             run(f"git clone https://aur.archlinux.org/{pkg}.git")
@@ -50,35 +50,44 @@ def update(pkgs):
             run("makepkg -si")
             os.chdir("..")
             shutil.rmtree(pkg)
-            print(f"[✓] Pakiet {pkg} zaktualizowany!")
+            print(f"[✓] Package {pkg} updated successfully!")
 
 def interactive_menu():
     while True:
-        print("\n=== aurx - Menedżer AUR ===")
-        print("1. Instaluj pakiet")
-        print("2. Aktualizuj pakiet")
-        print("3. Usuń pakiet")
-        print("4. Aktualizuj aurx")
-        print("5. Wyjście")
-        choice = input("Wybierz opcję: ")
+        print("\n=== aurx - AUR Manager ===")
+        print("1. Install package")
+        print("2. Update package")
+        print("3. Remove package")
+        print("4. Update aurx")
+        print("5. Exit")
+        choice = input("Select an option: ")
         if choice == "1":
-            pkgs = input("Podaj nazwę pakietu/pakietów (oddzielone spacją): ").split()
+            pkgs = input("Enter package name(s) (separated by space): ").split()
             install(pkgs)
         elif choice == "2":
-            pkgs = input("Podaj nazwę pakietu/pakietów (lub 'all'/'me'): ").split()
+            pkgs = input("Enter package name(s) (or 'all'/'me'): ").split()
             update(pkgs)
         elif choice == "3":
-            pkgs = input("Podaj nazwę pakietu/pakietów: ").split()
+            pkgs = input("Enter package name(s): ").split()
             remove(pkgs)
         elif choice == "4":
             update(["me"])
         elif choice == "5":
             break
         else:
-            print("Niepoprawny wybór!")
+            print("Invalid choice!")
             
 def about():
-	print("Menadżer pakietów AUR zrobiony przez zespół OneDevelopment! AUR package manager created by OneDevelopment team! https://github.com/OneDevelopmentPL")
+    print("AUR package manager created by OneDevelopment team! https://github.com/OneDevelopmentPL")
+
+def print_help():
+    print("Usage: aurx [operation] [packages]")
+    print("\nOperations:")
+    print("  -S, inst          Install packages")
+    print("  -R, rem           Remove packages")
+    print("  -Syu, -Su, update Update packages (use 'me' for aurx, 'all' for everything)")
+    print("  x                 Open interactive menu")
+    print("  about             Show information about aurx")
 
 def main():
     if len(sys.argv) < 2:
@@ -87,18 +96,24 @@ def main():
 
     cmd = sys.argv[1]
 
-    if cmd == "x":
-        interactive_menu()
-    elif cmd == "inst" and len(sys.argv) >= 3:
+    # Mapowanie flag w stylu Arch/pacman oraz starych komend
+    if cmd in ["-S", "inst"] and len(sys.argv) >= 3:
         install(sys.argv[2:])
-    elif cmd == "rem" and len(sys.argv) >= 3:
+    elif cmd in ["-R", "rem"] and len(sys.argv) >= 3:
         remove(sys.argv[2:])
-    elif cmd == "update" and len(sys.argv) >= 3:
+    elif cmd in ["-Syu", "-Su", "update"] and len(sys.argv) >= 3:
         update(sys.argv[2:])
+    elif cmd in ["-Syu", "-Su", "update"] and len(sys.argv) == 2:
+        update(["all"])
+    elif cmd == "x":
+        interactive_menu()
     elif cmd == "about":
-    	about()
+        about()
+    elif cmd in ["-h", "--help", "help"]:
+        print_help()
     else:
-        print("Niepoprawna komenda. Dostępne: inst, rem, update, x, about")
+        print(f"Unknown operation: {cmd}")
+        print_help()
         sys.exit(1)
 
 if __name__ == "__main__":
